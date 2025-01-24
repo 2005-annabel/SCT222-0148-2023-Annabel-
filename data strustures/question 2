@@ -1,0 +1,67 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct Node {
+    int data;
+    struct Node *prev, *next;
+} Node;
+
+Node* createNode(int data) {
+    Node* n = (Node*)malloc(sizeof(Node));
+    n->data = data;
+    n->prev = n->next = NULL;
+    return n;
+}
+
+Node* insertAtEnd(Node* h, int data) {
+    Node* n = createNode(data);
+    if (!h) return n;
+    Node* t = h;
+    while (t->next) t = t->next;
+    t->next = n; n->prev = t;
+    return h;
+}
+
+Node* reverseList(Node* h) {
+    Node *t = NULL, *c = h;
+    while (c) {
+        t = c->prev; c->prev = c->next; c->next = t; c = c->prev;
+    }
+    return t ? t->prev : h;
+}
+
+Node* addTwoNumbers(Node* l1, Node* l2) {
+    l1 = reverseList(l1); l2 = reverseList(l2);
+    Node *r = NULL; int carry = 0;
+    while (l1 || l2 || carry) {
+        int sum = carry + (l1 ? l1->data : 0) + (l2 ? l2->data : 0);
+        carry = sum / 10;
+        r = insertAtEnd(r, sum % 10);
+        if (l1) l1 = l1->next; if (l2) l2 = l2->next;
+    }
+    return reverseList(r);
+}
+
+void printList(Node* h) {
+    while (h) { printf("%d ", h->data); h = h->next; }
+    printf("\n");
+}
+
+void freeList(Node* h) {
+    while (h) { Node* t = h; h = h->next; free(t); }
+}
+
+int main() {
+    Node *l1 = NULL, *l2 = NULL;
+    l1 = insertAtEnd(insertAtEnd(insertAtEnd(l1, 2), 5), 9);
+    l2 = insertAtEnd(insertAtEnd(insertAtEnd(l2, 3), 8), 1);
+
+    printf("List 1: "); printList(l1);
+    printf("List 2: "); printList(l2);
+
+    Node* r = addTwoNumbers(l1, l2);
+    printf("Result: "); printList(r);
+
+    freeList(l1); freeList(l2); freeList(r);
+    return 0;
+}

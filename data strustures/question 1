@@ -1,0 +1,41 @@
+#include <stdio.h>
+#include <stdlib.h>
+typedef struct Node {
+int data;
+struct Node *next;
+} Node;
+Node* createNode(int data) {
+Node* n = (Node*)malloc(sizeof(Node));
+n->next = NULL; // Set n’s next pointer to NULL (since this’ll be the new tail).
+return n;
+}
+Node* insert(Node* head, int data) {
+	Node** curr = &head;
+	while (*curr) {
+		curr = &(*curr)->next;
+	}
+	*curr = createNode(data);
+	return head;
+}
+Node* merge(Node* l1, Node* l2) {
+Node dummy, *t = &dummy;
+t->next = (l1->data < l2->data) ? l1 : l2;
+while (l1 && l2) {
+	if (l1->data < l2->data) {
+		t->next = l1;
+	} else {
+		t->next = l2;
+		l2 = l2->next;
+	}
+	t = t->next;
+}
+t->next = l1 ? l1 : l2;
+return dummy.next;
+}
+void print(Node* h) {
+	while (h) {
+		printf("%d ", h->data);
+		h = h->next;
+	}
+	printf("\n");
+}
