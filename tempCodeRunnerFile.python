@@ -1,0 +1,150 @@
+import tkinter as tk
+from collections import deque
+
+# ---------------- SEARCH LOGIC ----------------
+BOAT_MOVES = [(2,0), (0,2), (1,1), (1,0), (0,1)]
+
+def valid_state(state):
+    ML, CL, boat, MR, CR = state
+    if ML < 0 or CL < 0 or MR < 0 or CR < 0:
+        return False
+    if ML > 0 and CL > ML:
+        return False
+    if MR > 0 and CR > MR:
+        return False
+    return True
+
+def successors(state):
+    ML, CL, boat, MR, CR = state
+    result = []
+
+    sign = -1 if boat == 'L' else 1
+    new_boat = 'R' if boat == 'L' else 'L'
+
+    for m, c in BOAT_MOVES:
+        new_state = (
+            ML + sign * m,
+            CL + sign * c,
+            new_boat,
+            MR - sign * m,
+            CR - sign * c
+        )
+        if valid_state(new_state):
+            result.append(new_state)
+    return result
+
+def bfs(start, goal):
+    agenda = deque([(start, [start])])
+    visited = set()
+
+    while agenda:
+        state, path = agenda.popleft()
+        if state in visited:
+            continue
+        visited.add(state)
+
+        if state == goal:
+            return path
+
+        for s in successors(state):
+            agenda.append((s, path + [s]))
+    return None
+
+solution = bfs((3,3,'L',0,0), (0,0,'R',3,3))
+step = 0
+auto_play = False
+
+# ---------------- GUI ----------------
+root = tk.Tk()
+root.title("Missionaries & Cannibals - Animated Visualization")
+root.geometry("800x500")
+
+canvas = tk.Canvas(root, width=800, height=350, bg="#aee2ff")
+canvas.pack()
+
+# River
+canvas.create_rectangle(350, 0, 450, 350, fill="#5dade2", outline="")
+
+def draw_people(x_start, y_start, m, c):
+    r = 18
+    spacing = 40
+    for i in range(m):
+        canvas.create_oval(
+            x_start, y_start + i*spacing,
+            x_start+2*r, y_start+2*r + i*spacing,
+            fill="#3498db"
+        )
+        canvas.create_text(x_start+r, y_start+r + i*spacing, text="M", fill="white")
+
+    for i in range(c):
+        canvas.create_oval(
+            x_start, y_start + (m+i)*spacing,
+            x_start+2*r, y_start+2*r + (m+i)*spacing,
+            fill="#e74c3c"
+        )
+        canvas.create_text(x_start+r, y_start+r + (m+i)*spacing, text="C", fill="white")
+
+def draw_state(state):
+    canvas.delete("all")
+
+    ML, CL, boat, MR, CR = state
+
+    # River
+    canvas.create_rectangle(350, 0, 450, 350, fill="#2980b9", outline="")
+
+    # Banks labels
+    canvas.create_text(150, 20, text="LEFT BANK", font=("Arial", 14, "bold"))
+    canvas.create_text(650, 20, text="RIGHT BANK", font=("Arial", 14, "bold"))
+
+    # Draw people
+    draw_people(80, 60, ML, CL)
+    draw_people(580, 60, MR, CR)
+
+    # Boat
+    boat_x = 250 if boat == 'L' else 500
+    canvas.create_rectangle(boat_x, 260, boat_x+100, 300, fill="#f1c40f")
+    canvas.create_text(boat_x+50, 280, text="🚣", font=("Arial", 20))
+
+    step_label.config(text=f"Step {step} / {len(solution)-1}")
+
+def next_step():
+    global step
+    if step < len(solution)-1:
+        step += 1
+        draw_state(solution[step])
+
+def prev_step():
+    global step
+    if step > 0:
+        step -= 1
+        draw_state(solution[step])
+
+def autoplay():
+    global auto_play
+    if auto_play:
+        next_step()
+        if step < len(solution)-1:
+            root.after(800, autoplay)
+        else:
+            auto_play = False
+
+def start_auto():
+    global auto_play
+    auto_play = True
+    autoplay()
+
+# ---------------- CONTROLS ----------------
+controls = tk.Frame(root)
+controls.pack(pady=10)
+
+tk.Button(controls, text="⏮ Previous", width=12, command=prev_step).grid(row=0, column=0, padx=10)
+tk.Button(controls, text="▶ Auto Play", width=12, command=start_auto).grid(row=0, column=1, padx=10)
+tk.Button(controls, text="Next ⏭", width=12, command=next_step).grid(row=0, column=2, padx=10)
+
+step_label = tk.Label(root, font=("Arial", 12, "bold"))
+step_label.pack()
+
+draw_state(solution[step])
+root.mainloop()
+
+
